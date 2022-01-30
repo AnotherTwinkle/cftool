@@ -59,18 +59,6 @@ const ll N = 5e4 + 105;
 
 void solve(){
 
-   ll n;
-   cin >> n;
-
-   set < ll > s;
-   f1(n){
-    ll a; cin >> a;
-    if(s.count(a)) s.in(-a);
-    else s.in(a);
-   }
-   cout << s.size() << '\n';
-
-
    return;
 }
 
