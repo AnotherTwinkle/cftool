@@ -1,6 +1,9 @@
 #!usr/bin/env python
 import sys
 import os
+from cftool import commands
+
+parser = commands.Parser()
 
 def get_template_code(lang, template):
     l = __file__.split(os.path.sep)
@@ -23,118 +26,131 @@ def makenotesfile(directory):
     with open(os.path.join(directory, 'notes.txt'), 'w') as f:
         f.write('')
 
-def problem(file, directory, template):
-    """Create a single file with given template."""
-
-    lang = file.split('.')[-1]
-    code = get_template_code(lang, template)
-
-    with open(os.path.join(directory, file), 'w') as f:
-        f.write(code)
-
-def problemdir(name, directory, lang, template, notes = False):
-    """Put the solution file in a directory, add a notes.txt optionally"""
-    directory = os.path.join(directory, name)
-    os.mkdir(directory)
-    problem(f'sol.{lang}', directory, template)
-    if notes:
-        makenotesfile(directory)
-    
-def contest(name, directory, lang, problemcount, template, notes = False):
-    """Create a directory, and create an file for each invidiual solution (Follows codeforces naming scheme)"""
-
-    import string
-    directory = os.path.join(directory, name)
-    os.mkdir(directory)
-    for i in range(problemcount):
-        problem(f'{string.ascii_uppercase[i]}.{lang}', directory, template)
-
-    if notes:
-        makenotesfile(directory)
-
-def contestwpdir(name, directory, lang, problemcount, template, notes = False):
-    """Same as contest, however a new directory is created for each solution file"""
-
-    import string
-    directory = os.path.join(directory, name)
-    os.mkdir(directory)
-    for i in range(problemcount):
-        s = string.ascii_uppercase[i]
-        problemdir(s, directory, lang, template)
-
-    if notes:
-        makenotesfile(directory)
-
 def get(l, i, d):
     try:
         return l[i]
     except IndexError:
         return d
 
-def main(): 
-    n = 1
-    target = get(sys.argv, n, None)
-    directory = os.getcwd()
-    
-    # TODO: Make the following code less repetitive.
-    if target == 'problem':
-        # prog contest [file] ?[template]
-        file = sys.argv[n + 1]
-        template = get(sys.argv, n + 2, 'default')
+def getrange(l, i, ds = []):
+    x = 0
+    r = []
+    for j in range(i):
+        try:
+            r.append(l[j])
+        except IndexError:
+            r.append(ds[x])
+            x += 1
+    return r
 
-        problem(file, directory, template)
+def problem_parser(args):
+	directory, name, template = getrange(args, 3, ['default'],)
+	return (directory, name, template)
 
-    elif target == 'problemdir':
-        # prog contest [name] [lang] ?[template] ?[--notes]
-        name = sys.argv[n + 1]
-        lang = sys.argv[n + 2]
-        template = get(sys.argv, n + 3, 'default')
-        if template == '--notes': # We're doing a bit of hack here to make template optional.
-            notes = True
-            template = 'default'
-        else:
-            notes = get(sys.argv, n + 4, '') == '--notes'
+@parser.command(problem_parser,
+                name = 'problem',
+                usage = 'problem [file] ?[template]'
+                )
+def problem(directory, name, template):
+    """Create a single file with given template."""
 
-        problemdir(name, directory, lang, template, notes)
+    lang = name.split('.')[-1]
+    code = get_template_code(lang, template)
 
-    elif target == 'contest':
-        # prog contest [name] [lang] [problemcount] ?[template] ?[--notes]
-        name = sys.argv[n + 1]
-        lang = sys.argv[n + 2]
-        problemcount = int(sys.argv[n + 3])
-        if problemcount not in range(1, 27):
-            return print('Problemcount cannot be lower than 0 or higher than 26')
+    with open(os.path.join(directory, name), 'w') as f:
+        f.write(code)
 
-        template = get(sys.argv, n + 4, 'default')
-        if template == '--notes':
-            notes = True
-            template = 'default'
-        else:
-            notes = get(sys.argv, n + 5, '') == '--notes'
 
-        contest(name, directory, lang, problemcount, template, notes)
+def problemdir_parser(args):
+    directory, name, lang = getrange(args, 3)
+    template = get(args, 3, 'default')
 
-    elif target == 'contestwpdir':
-        # prog contestwpdir [name] [lang] [problemcount] ?[template] ?[--notes]
-        name = sys.argv[n + 1]
-        lang = sys.argv[n + 2]
-        problemcount = int(sys.argv[n + 3])
-        if problemcount not in range(1, 27):
-            return print('Problemcount cannot be lower than 0 or higher than 26')
-        template = get(sys.argv, n + 4, 'default')
-        if template == '--notes':
-            notes = True
-            template = 'default'
-        else:
-            notes = get(sys.argv, n + 5, '') == '--notes'
-
-        contestwpdir(name, directory, lang, problemcount, template, notes)
-
-    elif target is None:
-        print('No command was provided')
-
+    if template == '--notes': # We're doing a bit of hack here to make template optional.
+        notes = True
+        template = 'default'
     else:
-        print('Unknown command.')
+        notes = get(args, 4, '') == '--notes'
+
+    return (directory, name, lang, template, notes)
+
+@parser.command(problemdir_parser,
+                name = 'problemdir',
+                aliases = ['pdir', 'pwdir'],
+                usage = 'problemdir [name] [lang] ?[template] ?[--notes]'
+                )
+def problemdir(directory, name, lang, template, notes):
+    """Put the solution file in a directory, add a notes.txt optionally"""
+
+    directory = os.path.join(directory, name)
+    os.mkdir(directory)
+    problem(directory, f'sol.{lang}', template)
+    if notes:
+        makenotesfile(directory)
+
+def contest_parser(args):
+    # Works for contestwpdir too.
+    directory, name, lang, problemcount = getrange(args, 4)
+    problemcount = int(problemcount)
+
+    if problemcount not in range(1, 27):
+        raise Exception('Problemcount cannot be lower than 0 or higher than 26')
+
+    template = get(args, 4, 'default')
+    if template == '--notes':
+        notes = True
+        template = 'default'
+    else:
+        notes = get(args, 5, '') == '--notes'
+
+    return (directory, name, lang, problemcount, template, notes)
+
+
+@parser.command(contest_parser, 
+                name = 'contest',
+                usage = 'contest [name] [lang] [problemcount] ?[template] ?[--notes]'
+                )
+def contest(directory, name, lang, problemcount, template, notes):
+    """Create a directory, and create an file for each invidiual solution (Follows codeforces naming scheme)"""
+
+    import string
+    directory = os.path.join(directory, name)
+    os.mkdir(directory)
+    for i in range(problemcount):
+        problem(directory, f'{string.ascii_uppercase[i]}.{lang}', template)
+
+    if notes:
+        makenotesfile(directory)
+
+@parser.command(contest_parser,
+                name = 'contestwpdir',
+                aliases = ['cwpdir'],
+                usage = 'contestwpdir [name] [lang] [problemcount] ?[template] ?[--notes]'
+                )
+def contestwpdir(directory, name, lang, problemcount, template, notes):
+    """Same as contest, however a new directory is created foreach solution file"""
+
+    import string
+    directory = os.path.join(directory, name)
+    os.mkdir(directory)
+    for i in range(problemcount):
+        s = string.ascii_uppercase[i]
+        problemdir(directory, s, lang, template, False)
+
+    if notes:
+        makenotesfile(directory)
+
+def main(): 
+    target = get(sys.argv, 1, None)
+    directory = os.getcwd()
+    args = [directory,] + sys.argv[2: len(sys.argv)]
+
+    if target is None:
+        return print('No command was provided')
+
+    try:
+        return parser.parse(target, args)
+    except commands.CommandNotFound:
+        return print('Command not found.')
 
 if __name__ == "__main__":
     main()
