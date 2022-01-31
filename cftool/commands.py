@@ -60,18 +60,3 @@ class CommandNotFound(Exception):
 class CommandAlreadyRegistered(Exception):
     pass
 
-################ TESTS
-
-parser = Parser()
-
-def parse_foo(arglist):
-    return (arglist[0],)
-
-@parser.command(parse_foo, name = 'bar', aliases = ['baz'], usage = 'foo [bar]')
-def foo(bar):
-    print(bar)
-
-# parser.parse('baz', ['aa'])
-    
-
-
