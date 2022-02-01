@@ -41,8 +41,8 @@ class Command:
     def __init__(self, func, parser_func, **kwargs):
         self.name = kwargs.get('name') or func.__name__
         self.aliases = kwargs.get('aliases') or []
-        self.usage = kwargs.get('usage') or 'Not provided.'
-        self.help = func.__doc__ or 'Not provided.'
+        self.usage = kwargs.get('usage', None)
+        self.help = func.__doc__ or None
 
         self.callback = func
         self.parser_func = parser_func
