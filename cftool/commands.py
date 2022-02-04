@@ -19,7 +19,10 @@ class Parser:
                 raise CommandAlreadyRegistered("This command has already been reigstered.")
 
             if not isinstance(command.aliases, (list, tuple)):
-                raise Exception("aliases must be a list or tuple.")
+                raise Exception("Aliases must be a list or tuple.")
+
+            if not isinstance(command.flags, (list, tuple)):
+                raise Exception("Flags must be a list or tuple.")
             
             for alias in command.aliases:
                 if alias in self.alias_table:
