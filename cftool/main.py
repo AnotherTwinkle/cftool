@@ -141,20 +141,6 @@ def contestwpdir(directory, name, lang, problemcount, template, notes):
     if notes:
         makenotesfile(directory)
 
-def main(): 
-    target = get(sys.argv, 1, None)
-    directory = os.getcwd()
-    args = [directory,] + sys.argv[2: len(sys.argv)]
-    flags, args = parser.parse_flags(args)
-
-    if target is None:
-        return print('No command was provided')
-
-    try:
-        return parser.parse(target, args, flags)
-    except clicore.CommandNotFound:
-        return print('Command not found.')
-
 if __name__ == "__main__":
-    main()
+    parser.run()
     
