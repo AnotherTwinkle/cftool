@@ -1,6 +1,7 @@
 include README.md
 include .gitignore
 include LICENSE 
+include requirements.txt
 
 recursive-include cftool/templates *
 recursive-include cftool *.py

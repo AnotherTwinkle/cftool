@@ -1,0 +1,1 @@
+clicore @ git+ssh://git@github.com/AnotherTwinkle/clicore.git

@@ -1,9 +1,9 @@
 #!usr/bin/env python
 import sys
 import os
-import commands
+import clicore
 
-parser = commands.Parser()
+parser = clicore.Parser()
 
 def get_template_code(lang, template):
     l = __file__.split(os.path.sep)
@@ -152,7 +152,7 @@ def main():
 
     try:
         return parser.parse(target, args, flags)
-    except commands.CommandNotFound:
+    except clicore.CommandNotFound:
         return print('Command not found.')
 
 if __name__ == "__main__":
