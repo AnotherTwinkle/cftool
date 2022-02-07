@@ -1,6 +1,7 @@
 #!usr/bin/env python
 import sys
 import os
+import string
 import clicore
 
 parser = clicore.Parser()
@@ -26,121 +27,75 @@ def makenotesfile(directory):
     with open(os.path.join(directory, 'notes.txt'), 'w') as f:
         f.write('')
 
-def get(l, i, d):
-    try:
-        return l[i]
-    except IndexError:
-        return d
-
-def getrange(l, i, ds = []):
-    x = 0
-    r = []
-    for j in range(i):
-        try:
-            r.append(l[j])
-        except IndexError:
-            r.append(ds[x])
-            x += 1
-    return r
-
-def problem_parser(args):
-    directory, name, template = getrange(args, 3, ['default'],)
-
-    return {'directory' : directory, 
-            'name' : name, 
-            'template' : template}
-
-@parser.command(problem_parser,
-                name = 'problem',
-                usage = 'problem [file] ?[template]'
-                )
-def problem(directory, name, template):
+@parser.command(name = 'problem', usage = 'problem [file] ?[template]')
+def problem(ctx, name, template= 'default'):
     """Create a single file with given template."""
 
     lang = name.split('.')[-1]
     code = get_template_code(lang, template)
 
-    with open(os.path.join(directory, name), 'w') as f:
+    with open(os.path.join(ctx.directory, name), 'w') as f:
         f.write(code)
 
 
-def problemdir_parser(args):
-    directory, name, lang = getrange(args, 3)
-    template = get(args, 3, 'default')
-
-    return {'directory' : directory, 
-            'name' : name, 
-            'lang' : lang,
-            'template' : template}
-
-@parser.command(problemdir_parser,
-                name = 'problemdir',
-                aliases = ['pdir', 'pwdir'],
-                usage = 'problemdir [name] [lang] ?[template] ?[--notes]',
-                flags = ['notes']
-                )
-def problemdir(directory, name, lang, template, notes):
+@parser.add_flag('notes', False)
+@parser.command(name = 'problemdir', aliases = ['pdir', 'pwdir'], usage = 'problemdir [name] [lang] ?[template] ?[--notes]')
+def problemdir(ctx, name, lang, template= 'default'):
     """Put the solution file in a directory, add a notes.txt optionally"""
 
-    directory = os.path.join(directory, name)
+    directory = os.path.join(ctx.directory, name)
     os.mkdir(directory)
-    problem(directory, f'sol.{lang}', template)
-    if notes:
+
+    dummyctx = clicore.Context(command= problem, directory= directory)
+    problem.invoke(dummyctx, f'sol.{lang}', template)
+
+    if ctx.flags.notes:
         makenotesfile(directory)
 
-def contest_parser(args):
-    # Works for contestwpdir too.
-    directory, name, lang, problemcount = getrange(args, 4)
-    problemcount = int(problemcount)
-
-    if problemcount not in range(1, 27):
-        raise Exception('Problemcount cannot be lower than 0 or higher than 26')
-
-    template = get(args, 4, 'default')
-
-    return {'directory' : directory, 
-            'name' : name, 
-            'lang' : lang, 
-            'problemcount' : problemcount, 
-            'template' : template}
-
-
-@parser.command(contest_parser, 
-                name = 'contest',
-                usage = 'contest [name] [lang] [problemcount] ?[template] ?[--notes]',
-                flags = ['notes']
-                )
-def contest(directory, name, lang, problemcount, template, notes):
+@parser.add_flag('notes', False)
+@parser.command(name = 'contest', usage = 'contest [name] [lang] [problemcount] ?[template] ?[--notes]')
+def contest(ctx, name, lang, problemcount, template= 'default'):
     """Create a directory, and create an file for each invidiual solution (Follows codeforces naming scheme)"""
 
-    import string
-    directory = os.path.join(directory, name)
+    directory = os.path.join(ctx.directory, name)
     os.mkdir(directory)
-    for i in range(problemcount):
-        problem(directory, f'{string.ascii_uppercase[i]}.{lang}', template)
 
-    if notes:
+    problemcount = int(problemcount)
+    if problemcount not in range(1, 27):
+        return print('Problemcount cannot be lower than 0 or higher than 26')
+
+    dummyctx = clicore.Context(command= problem, directory= directory)
+
+    for i in range(problemcount):
+        problem.invoke(dummyctx, f'{string.ascii_uppercase[i]}.{lang}', template)
+
+    if ctx.flags.notes:
         makenotesfile(directory)
 
-@parser.command(contest_parser,
-                name = 'contestwpdir',
-                aliases = ['cwpdir'],
-                usage = 'contestwpdir [name] [lang] [problemcount] ?[template] ?[--notes]',
-                flags = ['notes']
-                )
-def contestwpdir(directory, name, lang, problemcount, template, notes):
+
+@parser.add_flag('notes', False)
+@parser.command(name = 'contestwpdir', aliases = ['cwpdir'], usage = 'contestwpdir [name] [lang] [problemcount] ?[template] ?[--notes]')
+def contestwpdir(ctx, name, lang, problemcount, template= 'default'):
     """Same as contest, however a new directory is created foreach solution file"""
 
-    import string
-    directory = os.path.join(directory, name)
+    directory = os.path.join(ctx.directory, name)
     os.mkdir(directory)
+    dummyctx = clicore.Context(command= problemdir, directory= directory)
+
+    problemcount = int(problemcount)
+    if problemcount not in range(1, 27):
+        return print('Problemcount cannot be lower than 0 or higher than 26')
+
     for i in range(problemcount):
         s = string.ascii_uppercase[i]
-        problemdir(directory, s, lang, template, False)
+        problemdir.invoke(dummyctx, s, lang, template)
 
-    if notes:
+    if ctx.flags.notes:
         makenotesfile(directory)
 
-if __name__ == "__main__":
+def main():
     parser.run()
+
+if __name__ == "__main__":
+    main()
     
