@@ -38,7 +38,7 @@ def problem(ctx, name, template= 'default'):
         f.write(code)
 
 
-@parser.add_flag('notes', False)
+@parser.add_flag(name= 'notes', default= False)
 @parser.command(name = 'problemdir', aliases = ['pdir', 'pwdir'], usage = 'problemdir [name] [lang] ?[template] ?[--notes]')
 def problemdir(ctx, name, lang, template= 'default'):
     """Put the solution file in a directory, add a notes.txt optionally"""
@@ -52,15 +52,14 @@ def problemdir(ctx, name, lang, template= 'default'):
     if ctx.flags.notes:
         makenotesfile(directory)
 
-@parser.add_flag('notes', False)
+@parser.add_flag(name= 'notes', default= False)
 @parser.command(name = 'contest', usage = 'contest [name] [lang] [problemcount] ?[template] ?[--notes]')
-def contest(ctx, name, lang, problemcount, template= 'default'):
+def contest(ctx, name, lang, problemcount : int, template= 'default'):
     """Create a directory, and create an file for each invidiual solution (Follows codeforces naming scheme)"""
 
     directory = os.path.join(ctx.directory, name)
     os.mkdir(directory)
 
-    problemcount = int(problemcount)
     if problemcount not in range(1, 27):
         return print('Problemcount cannot be lower than 0 or higher than 26')
 
@@ -73,16 +72,15 @@ def contest(ctx, name, lang, problemcount, template= 'default'):
         makenotesfile(directory)
 
 
-@parser.add_flag('notes', False)
+@parser.add_flag(name= 'notes', default= False)
 @parser.command(name = 'contestwpdir', aliases = ['cwpdir'], usage = 'contestwpdir [name] [lang] [problemcount] ?[template] ?[--notes]')
-def contestwpdir(ctx, name, lang, problemcount, template= 'default'):
+def contestwpdir(ctx, name, lang, problemcount : int, template= 'default'):
     """Same as contest, however a new directory is created foreach solution file"""
 
     directory = os.path.join(ctx.directory, name)
     os.mkdir(directory)
     dummyctx = clicore.Context(command= problemdir, directory= directory)
 
-    problemcount = int(problemcount)
     if problemcount not in range(1, 27):
         return print('Problemcount cannot be lower than 0 or higher than 26')
 
